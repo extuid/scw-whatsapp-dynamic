@@ -173,4 +173,4 @@ function inicializarWhatsapp(configuracionSitios) {
     }
   }, 100);
 }
-// actualizado
+// code actualizado
