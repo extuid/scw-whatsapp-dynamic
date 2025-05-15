@@ -171,5 +171,6 @@ function inicializarWhatsapp(configuracionSitios) {
         .catch(err => console.error('[SCW TRACKING] Error al registrar clic:', err));
       };
     }
-  }, 100); // Espera cada 100ms hasta que #scw-product-info exista
+  }, 100);
 }
+// actualizado
