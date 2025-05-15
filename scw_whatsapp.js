@@ -1,5 +1,3 @@
-/* === SCW WhatsApp Config Dinámico (versión segura y comentada) === */
-
 document.addEventListener('DOMContentLoaded', function () {
   // Claves para el almacenamiento en caché local
   const CACHE_KEY = 'scw_config_cache';
@@ -8,8 +6,6 @@ document.addEventListener('DOMContentLoaded', function () {
   // Duración del caché en minutos
   const CACHE_DURATION_MIN = 60;
 
-  // 🔐 Clave ofuscada en Base64 (corresponde a: "limpiar_cache_whatsapp_2025")
-  // Para forzar recarga desde Google Sheets, usa la URL con: ?clear_cache=limpiar_cache_whatsapp_2025
   const parametroLimpieza = new URLSearchParams(window.location.search).get('clear_cache');
   const limpiarCache = parametroLimpieza === atob('bGltcGlhcl9jYWNoZV93aGF0c2FwcF8yMDI1');
 
