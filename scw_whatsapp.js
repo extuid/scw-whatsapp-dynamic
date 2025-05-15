@@ -1,4 +1,4 @@
-/* === SCW WhatsApp Config Dinámico === */
+/* === SCW WhatsApp Config Dinámico (versión segura y comentada) === */
 
 document.addEventListener('DOMContentLoaded', function () {
   // Claves para el almacenamiento en caché local
@@ -8,12 +8,10 @@ document.addEventListener('DOMContentLoaded', function () {
   // Duración del caché en minutos
   const CACHE_DURATION_MIN = 60;
 
-  // Clave secreta para forzar limpieza manual desde la URL
-  const CLAVE_SEGURA = 'miClaveUltraSecreta123';
-
-  // Verifica si la URL tiene el parámetro para forzar limpieza de caché
-  const claveURL = new URLSearchParams(window.location.search).get('scw_flush_cache');
-  const limpiarCache = claveURL === CLAVE_SEGURA;
+  // 🔐 Clave ofuscada en Base64 (corresponde a: "limpiar_cache_whatsapp_2025")
+  // Para forzar recarga desde Google Sheets, usa la URL con: ?clear_cache=limpiar_cache_whatsapp_2025
+  const parametroLimpieza = new URLSearchParams(window.location.search).get('clear_cache');
+  const limpiarCache = parametroLimpieza === atob('bGltcGlhcl9jYWNoZV93aGF0c2FwcF8yMDI1');
 
   // Valida si el caché actual aún es válido
   const esCacheValida = () => {
@@ -21,17 +19,16 @@ document.addEventListener('DOMContentLoaded', function () {
     return lastTime && (Date.now() - lastTime < CACHE_DURATION_MIN * 60000);
   };
 
-  // Determina si se usará la caché
+  // Determina si se usará la caché o se recargará desde Sheets
   const usarCache = !limpiarCache && esCacheValida();
   const cacheRaw = localStorage.getItem(CACHE_KEY);
 
   if (usarCache && cacheRaw) {
     console.log('[SCW] Usando configuración desde caché.');
     const config = JSON.parse(cacheRaw);
-    inicializarWhatsapp(config); // Llama a la función principal con la config en caché
+    inicializarWhatsapp(config);
   } else {
     console.log('[SCW] Cargando configuración desde Google Sheets...');
-    // Descarga CSV desde Google Sheets público
     fetch('https://docs.google.com/spreadsheets/d/e/2PACX-1vTPoOFV_b6K5fBZD9tPfGqJmtbjqSZcr5lqj5AP0kqkPfy_WCTcG0oFAubX3ytTO1DeHySzjJVuKytK/pub?output=csv')
       .then(res => res.text())
       .then(text => {
@@ -45,7 +42,6 @@ document.addEventListener('DOMContentLoaded', function () {
           encabezados.forEach((col, idx) => {
             filaObj[col] = fila[idx]?.trim();
           });
-
           const dominio = filaObj['dominio'];
           if (dominio) {
             configuracionSitios[dominio] = {
@@ -57,27 +53,27 @@ document.addEventListener('DOMContentLoaded', function () {
           }
         });
 
-        // Guarda en caché
+        // Guarda en caché para uso posterior
         localStorage.setItem(CACHE_KEY, JSON.stringify(configuracionSitios));
         localStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
 
-        // Inicializa con datos cargados
         inicializarWhatsapp(configuracionSitios);
       })
       .catch(err => console.error('❌ Error al cargar Google Sheet:', err));
   }
 });
 
+// ⚙️ Función que aplica la configuración cargada al DOM y enlaces
 function inicializarWhatsapp(configuracionSitios) {
   const hostname = window.location.hostname;
 
-  // Valores por defecto
+  // Valores por defecto si no se encuentra el dominio
   let nombreSitio = 'Sticker Center';
   let whatsappNumber = '593961211100';
   let usarCodigoProducto = true;
   let usarSufijoDispositivo = true;
 
-  // Selecciona configuración basada en el dominio actual
+  // Busca la configuración del dominio actual
   for (const dominio in configuracionSitios) {
     if (hostname.includes(dominio)) {
       const config = configuracionSitios[dominio];
@@ -89,17 +85,17 @@ function inicializarWhatsapp(configuracionSitios) {
     }
   }
 
-  // Detecta si es móvil para agregar sufijo (m) o (c)
+  // Detecta si es móvil para ajustar mensaje
   const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
   const sufijoDispositivo = usarSufijoDispositivo ? (isMobile ? '(m)' : '(c)') : '';
 
-  // Extrae información del producto desde data-attributes en el HTML
+  // Lee información del producto desde el DOM
   const info = document.getElementById('scw-product-info');
   const characteristic = info?.dataset.nombreCatalogo || '';
   const productCode = info?.dataset.codigo || '';
   nombreSitio = info?.dataset.sitio || nombreSitio;
 
-  // Construye mensaje con info del producto
+  // Construye el mensaje del producto (opcional)
   let mensajeProducto = '';
   if (characteristic) {
     mensajeProducto = `"${characteristic}`;
@@ -109,30 +105,30 @@ function inicializarWhatsapp(configuracionSitios) {
     mensajeProducto += `"`;
   }
 
-  // Mensajes diferentes según el botón
+  // Mensajes personalizados para los botones
   let messageNormal = `Hola ${nombreSitio}${sufijoDispositivo}`;
   let messageCompra = `Hola ${nombreSitio}${sufijoDispositivo}`;
   if (mensajeProducto) {
     messageNormal += `, me interesa ${mensajeProducto}`;
     messageCompra += `, quiero comprar ${mensajeProducto}`;
   } else {
-    messageNormal += `!`;
-    messageCompra += `!`;
+    messageNormal += '!';
+    messageCompra += '!';
   }
 
-  // Configura botones de contacto normal
+  // Inserta el mensaje en los botones estándar
   document.querySelectorAll('.scw_btwhatsapp').forEach(button => {
     button.href = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(messageNormal)}`;
     button.addEventListener('click', () => enviarEventoClick(button, 'consulta'));
   });
 
-  // Configura botones de contacto tipo compra
+  // Inserta el mensaje en los botones de compra
   document.querySelectorAll('.scw_btwhatsapp-compra').forEach(button => {
     button.href = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(messageCompra)}`;
     button.addEventListener('click', () => enviarEventoClick(button, 'compra'));
   });
 
-  // Función para enviar eventos a GA y guardar logs
+  // 🧾 Función para registrar clics y enviar eventos a GA
   const enviarEventoClick = (element, tipoBoton) => {
     const esDebug = new URLSearchParams(window.location.search).get('debug') === '1';
     const origen = element.getAttribute('data-scw-origen') || 'desconocido';
@@ -145,17 +141,16 @@ function inicializarWhatsapp(configuracionSitios) {
     const utm_source = params.get('utm_source') || '';
     const utm_medium = params.get('utm_medium') || '';
     const utm_campaign = params.get('utm_campaign') || '';
-    
     const telefonoLegible = whatsappNumber.replace(/^593/, '0').replace(/(...)(...)(....)/, '$1 $2 $3');
 
-    // Identificador único de visitante
+    // ID de visitante único por navegador
     let visitanteID = localStorage.getItem('scw_visitante_id');
     if (!visitanteID) {
       visitanteID = 'scw-' + Math.random().toString(36).substring(2, 10);
       localStorage.setItem('scw_visitante_id', visitanteID);
     }
 
-    // Enviar evento a Google Analytics
+    // Google Analytics (si está cargado)
     if (window.gtag) {
       gtag('event', esDebug ? 'click_whatsapp_test' : 'click_whatsapp', {
         event_category: esDebug ? 'WhatsApp Debug' : 'WhatsApp',
@@ -168,7 +163,7 @@ function inicializarWhatsapp(configuracionSitios) {
       });
     }
 
-    // Enviar log a servidor
+    // Reporte a backend (registro personalizado)
     fetch('/integrations/whatsapp_dinamico/report/guardar_whatsapp_click.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
