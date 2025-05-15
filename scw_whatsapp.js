@@ -1,13 +1,12 @@
-/* === SCW WhatsApp Config Dinámico === */
+/* === SCW WhatsApp Config Dinámico (versión segura y comentada) === */
 
 document.addEventListener('DOMContentLoaded', function () {
   const CACHE_KEY = 'scw_config_cache';
   const CACHE_TIME_KEY = 'scw_config_cache_time';
   const CACHE_DURATION_MIN = 60;
-  const CLAVE_SEGURA = 'miClaveUltraSecreta123';
 
-  const claveURL = new URLSearchParams(window.location.search).get('scw_flush_cache');
-  const limpiarCache = claveURL === CLAVE_SEGURA;
+  const parametroLimpieza = new URLSearchParams(window.location.search).get('clear_cache');
+  const limpiarCache = parametroLimpieza === atob('bGltcGlhcl9jYWNoZV93aGF0c2FwcF8yMDI1'); // "limpiar_cache_whatsapp_2025"
 
   const esCacheValida = () => {
     const lastTime = parseInt(localStorage.getItem(CACHE_TIME_KEY), 10);
@@ -53,118 +52,124 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 function inicializarWhatsapp(configuracionSitios) {
-  const hostname = window.location.hostname;
-  let nombreSitio = 'Sticker Center';
-  let whatsappNumber = '593961211100';
-  let usarCodigoProducto = true;
-  let usarSufijoDispositivo = true;
+  const esperarElemento = setInterval(() => {
+    const info = document.getElementById('scw-product-info');
+    if (info) {
+      clearInterval(esperarElemento);
 
-  for (const dominio in configuracionSitios) {
-    if (hostname.includes(dominio)) {
-      const config = configuracionSitios[dominio];
-      nombreSitio = config.nombre;
-      whatsappNumber = config.numero;
-      usarCodigoProducto = config.usarCodigoProducto;
-      usarSufijoDispositivo = config.usarSufijoDispositivo;
-      break;
-    }
-  }
+      const hostname = window.location.hostname;
+      let nombreSitio = 'Sticker Center';
+      let whatsappNumber = '593961211100';
+      let usarCodigoProducto = true;
+      let usarSufijoDispositivo = true;
 
-  const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
-  const sufijoDispositivo = usarSufijoDispositivo ? (isMobile ? '(m)' : '(c)') : '';
-
-  const info = document.getElementById('scw-product-info');
-  const characteristic = info?.dataset.nombreCatalogo || '';
-  const productCode = info?.dataset.codigo || '';
-  nombreSitio = info?.dataset.sitio || nombreSitio;
-
-  let mensajeProducto = '';
-  if (characteristic) {
-    mensajeProducto = `"${characteristic}`;
-    if (usarCodigoProducto && productCode) {
-      mensajeProducto += ` (cod. ${productCode})`;
-    }
-    mensajeProducto += `"`;
-  }
-
-  let messageNormal = `Hola ${nombreSitio}${sufijoDispositivo}`;
-  let messageCompra = `Hola ${nombreSitio}${sufijoDispositivo}`;
-  if (mensajeProducto) {
-    messageNormal += `, me interesa ${mensajeProducto}`;
-    messageCompra += `, quiero comprar ${mensajeProducto}`;
-  } else {
-    messageNormal += `!`;
-    messageCompra += `!`;
-  }
-
-  document.querySelectorAll('.scw_btwhatsapp').forEach(button => {
-    button.href = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(messageNormal)}`;
-    button.addEventListener('click', () => enviarEventoClick(button, 'consulta'));
-  });
-  document.querySelectorAll('.scw_btwhatsapp-compra').forEach(button => {
-    button.href = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(messageCompra)}`;
-    button.addEventListener('click', () => enviarEventoClick(button, 'compra'));
-  });
-
-  const enviarEventoClick = (element, tipoBoton) => {
-    const esDebug = new URLSearchParams(window.location.search).get('debug') === '1';
-    const origen = element.getAttribute('data-scw-origen') || 'desconocido';
-    const paginaActual = window.location.href;
-    const ahora = new Date();
-    const fecha = ahora.toISOString().split('T')[0];
-    const hora = ahora.toTimeString().split(' ')[0];
-    const referer = document.referrer || 'directo';
-    const params = new URLSearchParams(window.location.search);
-    const utm_source = params.get('utm_source') || '';
-    const utm_medium = params.get('utm_medium') || '';
-    const utm_campaign = params.get('utm_campaign') || '';
-    const telefonoLegible = whatsappNumber.replace(/^593/, '0').replace(/(...)(...)(....)/, '$1 $2 $3');
-    let visitanteID = localStorage.getItem('scw_visitante_id');
-    if (!visitanteID) {
-      visitanteID = 'scw-' + Math.random().toString(36).substring(2, 10);
-      localStorage.setItem('scw_visitante_id', visitanteID);
-    }
-
-    if (window.gtag) {
-      gtag('event', esDebug ? 'click_whatsapp_test' : 'click_whatsapp', {
-        event_category: esDebug ? 'WhatsApp Debug' : 'WhatsApp',
-        event_label: `${tipoBoton} - ${origen}`,
-        value: 1,
-        page_location: paginaActual,
-        idioma: navigator.language,
-        click_date: fecha,
-        click_time: hora
-      });
-    }
-
-    fetch('/integrations/whatsapp_dinamico/report/guardar_whatsapp_click.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        tipo: tipoBoton,
-        origen,
-        url: paginaActual,
-        caracteristica: mensajeProducto || null,
-        sitio: nombreSitio,
-        telefono: telefonoLegible,
-        referer,
-        utm_source,
-        utm_medium,
-        utm_campaign,
-        debug: esDebug,
-        visitante: visitanteID
-      })
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (data.status !== 'ok') {
-        console.warn('[SCW TRACKING] Error al guardar clic en el log:', data.message);
-      } else {
-        console.log('[SCW TRACKING] OK - clic guardado');
+      for (const dominio in configuracionSitios) {
+        if (hostname.includes(dominio)) {
+          const config = configuracionSitios[dominio];
+          nombreSitio = config.nombre;
+          whatsappNumber = config.numero;
+          usarCodigoProducto = config.usarCodigoProducto;
+          usarSufijoDispositivo = config.usarSufijoDispositivo;
+          break;
+        }
       }
-    })
-    .catch(err => console.error('[SCW TRACKING] Error al registrar clic:', err));
-  };
+
+      const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+      const sufijoDispositivo = usarSufijoDispositivo ? (isMobile ? '(m)' : '(c)') : '';
+
+      const characteristic = info?.dataset.nombreCatalogo || '';
+      const productCode = info?.dataset.codigo || '';
+      nombreSitio = info?.dataset.sitio || nombreSitio;
+
+      let mensajeProducto = '';
+      if (characteristic) {
+        mensajeProducto = `"${characteristic}`;
+        if (usarCodigoProducto && productCode) {
+          mensajeProducto += ` (cod. ${productCode})`;
+        }
+        mensajeProducto += `"`;
+      }
+
+      let messageNormal = `Hola ${nombreSitio}${sufijoDispositivo}`;
+      let messageCompra = `Hola ${nombreSitio}${sufijoDispositivo}`;
+      if (mensajeProducto) {
+        messageNormal += `, me interesa ${mensajeProducto}`;
+        messageCompra += `, quiero comprar ${mensajeProducto}`;
+      } else {
+        messageNormal += `!`;
+        messageCompra += `!`;
+      }
+
+      document.querySelectorAll('.scw_btwhatsapp').forEach(button => {
+        button.href = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(messageNormal)}`;
+        button.addEventListener('click', () => enviarEventoClick(button, 'consulta'));
+      });
+
+      document.querySelectorAll('.scw_btwhatsapp-compra').forEach(button => {
+        button.href = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(messageCompra)}`;
+        button.addEventListener('click', () => enviarEventoClick(button, 'compra'));
+      });
+
+      const enviarEventoClick = (element, tipoBoton) => {
+        const esDebug = new URLSearchParams(window.location.search).get('debug') === '1';
+        const origen = element.getAttribute('data-scw-origen') || 'desconocido';
+        const paginaActual = window.location.href;
+        const ahora = new Date();
+        const fecha = ahora.toISOString().split('T')[0];
+        const hora = ahora.toTimeString().split(' ')[0];
+        const referer = document.referrer || 'directo';
+        const params = new URLSearchParams(window.location.search);
+        const utm_source = params.get('utm_source') || '';
+        const utm_medium = params.get('utm_medium') || '';
+        const utm_campaign = params.get('utm_campaign') || '';
+        const telefonoLegible = whatsappNumber.replace(/^593/, '0').replace(/(...)(...)(....)/, '$1 $2 $3');
+
+        let visitanteID = localStorage.getItem('scw_visitante_id');
+        if (!visitanteID) {
+          visitanteID = 'scw-' + Math.random().toString(36).substring(2, 10);
+          localStorage.setItem('scw_visitante_id', visitanteID);
+        }
+
+        if (window.gtag) {
+          gtag('event', esDebug ? 'click_whatsapp_test' : 'click_whatsapp', {
+            event_category: esDebug ? 'WhatsApp Debug' : 'WhatsApp',
+            event_label: `${tipoBoton} - ${origen}`,
+            value: 1,
+            page_location: paginaActual,
+            idioma: navigator.language,
+            click_date: fecha,
+            click_time: hora
+          });
+        }
+
+        fetch('/integrations/whatsapp_dinamico/report/guardar_whatsapp_click.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tipo: tipoBoton,
+            origen,
+            url: paginaActual,
+            caracteristica: mensajeProducto || null,
+            sitio: nombreSitio,
+            telefono: telefonoLegible,
+            referer,
+            utm_source,
+            utm_medium,
+            utm_campaign,
+            debug: esDebug,
+            visitante: visitanteID
+          })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.status !== 'ok') {
+            console.warn('[SCW TRACKING] Error al guardar clic en el log:', data.message);
+          } else {
+            console.log('[SCW TRACKING] OK - clic guardado');
+          }
+        })
+        .catch(err => console.error('[SCW TRACKING] Error al registrar clic:', err));
+      };
+    }
+  }, 100); // Espera cada 100ms hasta que #scw-product-info exista
 }
-// Ejemplo enlace botón whatsapp estándar <a class="scw_btwhatsapp" data-scw-origen="ficha-producto" target="_blank">Consultar por WhatsApp</a>
-// Ejemplo enlace botón whatsapp compra <a class="scw_btwhatsapp-compra" data-scw-origen="popup-oferta" target="_blank">Comprar por WhatsApp</a>
